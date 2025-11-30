@@ -8,6 +8,6 @@ pandas
 numpy
 matplotlib
 tqdm
-deepspeed  # optional, only if using DeepSpeed inference
+# deepspeed  # optional, only if using DeepSpeed inference
 
 # Note: pick versions compatible with your CUDA/PyTorch setup.
