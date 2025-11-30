@@ -1,89 +1,55 @@
-"""
-Download / prepare datasets for three domains and save them as JSONL:
-Each line: {"id": str, "question": str, "context": str | null, "answer": str}
-"""
+# scripts/fetch_datasets.py
+# ---------------------------------------------------------
+# Downloads all datasets used for evaluating the domain experts.
+# Biomedical → PubMedQA
+# Legal → Law-StackExchange
+# Code → MBPP
+# ---------------------------------------------------------
 
 import os
-import json
-from pathlib import Path
 from datasets import load_dataset
 
-OUT_DIR = Path("data")
+DATA_ROOT = "dataset"
 
-def save_jsonl(items, path):
-    with open(path, "w", encoding="utf-8") as f:
-        for it in items:
-            f.write(json.dumps(it, ensure_ascii=False) + "\n")
+
+def ensure_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 
 def fetch_pubmedqa():
-    out = OUT_DIR / "biomedical"
-    out.mkdir(parents=True, exist_ok=True)
-    try:
-        ds = load_dataset("pubmed_qa", "pqa_labeled")
-    except Exception as e:
-        print("PubMedQA not available via HF in this environment. See https://github.com/ for manual instructions.")
-        print("Error:", e)
-    print("pubmed_qa data:")
-    print(ds)
-    # items = []
-    # for ex in ds["test"]:
-    #     items.append({
-    #         "id": ex.get("pmid", ""),
-    #         "question": ex.get("question", ""),
-    #         "context": ex.get("abstract", ""),
-    #         "answer": ex.get("label", "")
-    #     })
-    # save_jsonl(items, out / "pubmedqa_test.jsonl")
-    # print("Saved PubMedQA ->", out / "pubmedqa_test.jsonl")
+    """Download the PubMedQA dataset (biomedical domain)."""
+    print("[Biomedical] Downloading PubMedQA...")
+    ds = load_dataset("pubmed_qa", "pqa_labeled")
+    save_path = os.path.join(DATA_ROOT, "pubmedqa")
+    ensure_dir(save_path)
+    ds.save_to_disk(save_path)
+    print(f"[Biomedical] Saved to {save_path}")
 
-def fetch_legal():
-    out = OUT_DIR / "legal"
-    out.mkdir(parents=True, exist_ok=True)
 
-    # LEGALBENCH / JEC-QA often require manual fetch. Attempt to load JEC-QA if available.
-    try:
-        ds = load_dataset("ymoslem/Law-StackExchange")
-    except Exception as e:
-        print("LEGALBENCH/JEC-QA may require manual download. See LEGALBENCH paper and supplemental materials for links.")
-        print("Error:", e)
+def fetch_law_stackexchange():
+    """Download the Law-StackExchange dataset (legal domain)."""
+    print("[Legal] Downloading Law-StackExchange...")
+    ds = load_dataset("ymoslem/Law-StackExchange")
+    save_path = os.path.join(DATA_ROOT, "law_stackexchange")
+    ensure_dir(save_path)
+    ds.save_to_disk(save_path)
+    print(f"[Legal] Saved to {save_path}")
 
-    print("Law-StackExchange data:")
-    print(ds)
-    # items = [{
-    #     "id": ex.get("id", ""),
-    #     "question": ex.get("question", ""),
-    #     "context": ex.get("context", ""),
-    #     "answer": ex.get("answer", "")
-    # } for ex in ds]
-    # save_jsonl(items, out / "jecqa_test.jsonl")
-    # print("Saved JEC-QA ->", out / "jecqa_test.jsonl")
 
-def fetch_code():
-    out = OUT_DIR / "code"
-    out.mkdir(parents=True, exist_ok=True)
-    # Try MBPP, HumanEval often require special handling. We'll try MBPP from HF.
-    try:
-        ds = load_dataset("mbpp")
-    except Exception as e:
-        print("MBPP not available via HF in this environment. For HumanEval see OpenAI or GitHub mirrors.")
-        print("Error:", e)
+def fetch_mbpp():
+    """Download the MBPP dataset (code domain)."""
+    print("[Coding] Downloading MBPP...")
+    ds = load_dataset("mbpp")
+    save_path = os.path.join(DATA_ROOT, "mbpp")
+    ensure_dir(save_path)
+    ds.save_to_disk(save_path)
+    print(f"[Coding] Saved to {save_path}")
 
-    print("mbpp data:")
-    print(ds)
-    # items = []
-    # # use test split if present; HF's 'mbpp' might have an evaluation split
-    # split_name = "test" if "test" in ds else "validation"
-    # for ex in ds[split_name]:
-    #     items.append({
-    #         "id": ex.get("baseline_id", ""),
-    #         "question": ex.get("text", ""),
-    #         "context": None,
-    #         "answer": ex.get("code", "")
-    #     })
-    # save_jsonl(items, out / "mbpp_test.jsonl")
-    # print("Saved MBPP ->", out / "mbpp_test.jsonl")
 
 if __name__ == "__main__":
+    ensure_dir(DATA_ROOT)
     fetch_pubmedqa()
-    fetch_legal()
-    fetch_code()
+    fetch_law_stackexchange()
+    fetch_mbpp()
+    print("[DONE] All datasets downloaded.")
