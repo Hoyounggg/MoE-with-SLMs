@@ -103,7 +103,7 @@ def main():
     parser.add_argument(
         "--max_examples",
         type=int,
-        default=23,
+        default=47,
         help="Limit of examples per domain to evaluate (default: 100).",
     )
     args = parser.parse_args()
