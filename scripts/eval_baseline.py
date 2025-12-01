@@ -4,13 +4,13 @@ import os
 import sys
 from pathlib import Path
 
-# Ensure project root is on sys.path when run as a script
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Ensure project root is on sys.path so imports work when the file is run directly
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from scripts.eval.data_utils import build_prompt, get_example_id, load_domain_dataset
 from scripts.eval.evaluate import evaluate_domain
@@ -25,11 +25,19 @@ def generate_response(model, tokenizer, prompt: str, max_new_tokens: int):
             temperature=0.7,
             top_p=0.9,
         )
-    return tokenizer.decode(output[0], skip_special_tokens=True)
+    # Decode only the newly generated tokens (drop the prompt to avoid echoing it)
+    generated_tokens = output[0, inputs["input_ids"].shape[1] :]
+    return tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
 
 
-def evaluate_baseline_for_domain(domain, model, tokenizer, results_dir: str, max_new_tokens: int):
+def evaluate_baseline_for_domain(
+    domain, model, tokenizer, results_dir: str, max_new_tokens: int, max_examples: int
+):
     dataset = load_domain_dataset(domain)
+    if max_examples is not None:
+        max_examples = min(max_examples, len(dataset))
+        dataset = dataset.select(range(max_examples))
+
     preds = {}
     for ex in dataset:
         ex_id = get_example_id(domain, ex)
@@ -64,6 +72,12 @@ def main():
         default=256,
         help="Maximum tokens to generate per example.",
     )
+    parser.add_argument(
+        "--max_examples",
+        type=int,
+        default=23,
+        help="Limit of examples per domain to evaluate (default: 100).",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.results_dir, exist_ok=True)
@@ -79,7 +93,12 @@ def main():
     for domain in ["biomedical", "legal", "code"]:
         print(f"Evaluating baseline on domain: {domain}")
         metrics[domain] = evaluate_baseline_for_domain(
-            domain, model, tokenizer, args.results_dir, args.max_new_tokens
+            domain,
+            model,
+            tokenizer,
+            args.results_dir,
+            args.max_new_tokens,
+            args.max_examples,
         )
 
     metrics_path = os.path.join(args.results_dir, "baseline_metrics.json")

@@ -13,6 +13,7 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from pathlib import Path
+import re
 
 # Local paths that match download_experts.py targets
 DOMAIN_TO_PATH = {
@@ -73,6 +74,11 @@ class ExpertRouter:
         if self.model is None:
             raise RuntimeError("No expert model loaded.")
 
+        # Ensure padding is defined to avoid warnings
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.model.config.pad_token_id = self.tokenizer.pad_token_id
+
         inputs = self.tokenizer(query, return_tensors="pt").to(self.model.device)
 
         with torch.no_grad():
@@ -82,6 +88,27 @@ class ExpertRouter:
                 do_sample=True,
                 temperature=0.7,
                 top_p=0.9,
+                pad_token_id=self.tokenizer.pad_token_id,
             )
 
-        return self.tokenizer.decode(output[0], skip_special_tokens=True)
+        # Decode only the newly generated continuation (drop the prompt)
+        generated_tokens = output[0, inputs["input_ids"].shape[1] :]
+        decoded = self.tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+        return _clean_generation(decoded)
+
+
+def _clean_generation(text: str) -> str:
+    """Remove leading answer markers or repeated instructions."""
+    cleaned = text.strip()
+
+    # Strip common leading markers the model may emit
+    patterns = [
+        r"(?is)^answer\s*:\s*",
+        r"(?i)^\[/?inst\]\s*",
+        r"^</?s>\s*",
+        r"^<\|.*?\|>\s*",
+    ]
+    for pat in patterns:
+        cleaned = re.sub(pat, "", cleaned)
+
+    return cleaned.strip()

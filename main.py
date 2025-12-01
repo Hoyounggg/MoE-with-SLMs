@@ -20,7 +20,8 @@ def main_loop():
         domain = clf.predict(user_query)
         print(f"[System] Detected domain: {domain}")
         router.load_expert(domain)
-        prompt = PROMPTS.get(domain, "") + user_query
+        # Keep the prompt minimal and end with an explicit answer cue
+        prompt = f"{PROMPTS.get(domain, '')}{user_query.strip()}\nAnswer:"
         answer = router.generate(prompt)
         print("\nExpert:\n", answer)
 
