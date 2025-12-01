@@ -5,11 +5,6 @@
 #   - Cache currently active model to avoid repeated loads
 #   - Automatically unload model when switching domains
 #
-# Expert models:
-#   biomedical -> ./experts/biomedical/MediPhi-3.5-mini
-#   legal     -> ./experts/legal/Legal-Llama-3.2-3B
-#   code      -> ./experts/coding/Qwen2.5-Coder-3B
-#
 # Assumptions:
 #   - All models are pre-downloaded under experts/<domain>/
 #   - Using HuggingFace Transformers
@@ -19,9 +14,10 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from pathlib import Path
 
+# Local paths that match download_experts.py targets
 DOMAIN_TO_PATH = {
-    "biomedical": "./experts/biomedical/MediPhi-3.5-mini",
-    "legal": "./experts/legal/Legal-Llama-3.2-3B",
+    "biomedical": "./experts/biomedical/MediPhi-Instruct",
+    "legal": "./experts/legal/Saul-7B-Instruct-v1",
     "code": "./experts/coding/Qwen2.5-Coder-3B",
 }
 
