@@ -305,6 +305,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 - **Expert Models**: Thanks to Microsoft (MediPhi), Equall (Saul), and Qwen team
 - **Datasets**: PubMedQA, Law-StackExchange, MBPP communities
 - **Framework**: Built with 🤗 Transformers and PyTorch
+- **Development**: Gemini was used to assist with trivial coding tasks during development
 
 ## Contact
 
