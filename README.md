@@ -1,6 +1,6 @@
 # MoE-with-SLMs
 
-This is a Mixture-of-Experts (MoE) system using Small Language Models (SLMs) that dynamically routes queries to domain-specific expert models. This project evaluates domain-specific expert LLMs (Biomedical, Legal, Code) against a single baseline model (≤8B parameters) and implements an intelligent routing mechanism using a fine-tuned DistilBERT classifier.
+This project implements a Mixture-of-Experts (MoE) system using Small Language Models (SLMs) that dynamically routes queries to domain-specific expert models. This project evaluates domain-specific expert LLMs (Biomedical, Legal, Code) against a single baseline model (≤8B parameters) and implements an intelligent routing mechanism using a fine-tuned DistilBERT classifier.
 
 ## Overview
 
