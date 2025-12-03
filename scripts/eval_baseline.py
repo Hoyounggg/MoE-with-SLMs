@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from pathlib import Path
+import time
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -38,17 +39,20 @@ def evaluate_baseline_for_domain(
         max_examples = min(max_examples, len(dataset))
         dataset = dataset.select(range(max_examples))
 
-    preds = {}
+    preds, times = {}, []
     for ex in dataset:
         ex_id = get_example_id(domain, ex)
         prompt = build_prompt(domain, ex)
+        start = time.time()
         preds[ex_id] = generate_response(model, tokenizer, prompt, max_new_tokens)
+        times.append(time.time() - start)
 
     pred_path = os.path.join(results_dir, f"baseline_preds_{domain}.json")
     with open(pred_path, "w") as f:
         json.dump(preds, f, indent=2)
 
     metrics = evaluate_domain(domain, preds, dataset)
+    metrics["avg_latency"] = sum(times) / len(times) if times else 0.0
     return metrics
 
 
@@ -75,7 +79,7 @@ def main():
     parser.add_argument(
         "--max_examples",
         type=int,
-        default=47,
+        default=100,
         help="Limit of examples per domain to evaluate (default: 100).",
     )
     args = parser.parse_args()
